@@ -24,8 +24,20 @@ def test_ask_with_no_documents():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "success"
-    # Should handle gracefully, not crash
     assert "answer" in data["data"]
+    assert "route" in data["data"]
+
+
+def test_ask_with_force_route():
+    """Asking a question with forced route should obey the override."""
+    response = client.post("/api/v1/ask", json={
+        "question": "Which subsidiaries supply components to Samsung?",
+        "force_route": "graph"
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert data["data"]["route"] == "graph"
 
 
 def test_upload_non_pdf_rejected():

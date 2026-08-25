@@ -2,24 +2,25 @@ from fastapi import FastAPI
 from app.api.routes import ingest, query
 
 app = FastAPI(
-    title="Enterprise RAG API",
+    title="Enterprise Hybrid GraphRAG API",
     description="""
-## 🚀 Enterprise RAG (Retrieval-Augmented Generation) API
+## 🚀 Enterprise Hybrid Graph + Vector RAG API
 
-Upload any PDF document and ask natural language questions about it.
-The system uses semantic search + LLM generation to answer with source citations.
+Upload financial filings (SEC 10-K, 10-Q, annual reports) and query them using an integrated Knowledge Graph and Vector Search engine.
 
-### How it works:
-1. **POST /upload** — Upload a PDF. It gets parsed, chunked, embedded, and stored.
-2. **POST /ask** — Ask a question. The system finds relevant chunks and generates a grounded answer.
+### Core Capabilities:
+1. **POST /api/v1/upload** — Ingest financial PDF. Extracts text into FAISS vector store and parses structured entities & relations into Neo4j with provenance tracking.
+2. **POST /api/v1/ask** — Multi-modal query answering using Query Router (`vector`, `graph`, `both`) with per-claim citation validation.
+3. **GET /health** — Service health monitoring.
 
 ### Tech Stack:
-- **Embeddings:** sentence-transformers (all-MiniLM-L6-v2)
-- **Vector DB:** ChromaDB
-- **LLM:** LLaMA 3 via Groq API
-- **Framework:** FastAPI
+- **Knowledge Graph:** Neo4j Community (Cypher Graph Database)
+- **Vector DB:** FAISS (Facebook AI Similarity Search)
+- **Embeddings:** `all-MiniLM-L6-v2` (sentence-transformers)
+- **LLM Reasoning:** LLaMA 3.3 via Groq
+- **API Framework:** FastAPI
     """,
-    version="1.0.0",
+    version="2.0.0",
 )
 
 # Register routers
@@ -30,13 +31,13 @@ app.include_router(query.router, prefix="/api/v1", tags=["Query"])
 @app.get("/health", tags=["Health"])
 def health_check():
     """Health check endpoint for monitoring and CI/CD pipelines."""
-    return {"status": "healthy", "version": "1.0.0"}
+    return {"status": "healthy", "version": "2.0.0"}
 
 
 @app.get("/", tags=["Root"])
 def root():
     return {
-        "message": "Enterprise RAG API is running!",
+        "message": "Enterprise Hybrid GraphRAG API is running!",
         "docs": "/docs",
         "health": "/health",
     }

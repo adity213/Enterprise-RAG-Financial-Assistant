@@ -1,0 +1,191 @@
+[
+  {
+    "id": 1,
+    "category": "single-hop",
+    "question": "What is the total revenue reported by the company?",
+    "expected_answer_keywords": ["revenue", "billion", "reported"],
+    "target_route": "vector"
+  },
+  {
+    "id": 2,
+    "category": "single-hop",
+    "question": "Who is the Chief Executive Officer (CEO) of Apple?",
+    "expected_answer_keywords": ["Tim Cook", "CEO", "Executive"],
+    "target_route": "graph"
+  },
+  {
+    "id": 3,
+    "category": "single-hop",
+    "question": "Where is Apple Inc. headquartered?",
+    "expected_answer_keywords": ["Cupertino", "California"],
+    "target_route": "graph"
+  },
+  {
+    "id": 4,
+    "category": "single-hop",
+    "question": "What is Apple's reported Net Income for the fiscal year?",
+    "expected_answer_keywords": ["Net Income", "billion"],
+    "target_route": "vector"
+  },
+  {
+    "id": 5,
+    "category": "single-hop",
+    "question": "Who serves as the Chief Financial Officer (CFO)?",
+    "expected_answer_keywords": ["Luca Maestri", "CFO", "Financial"],
+    "target_route": "graph"
+  },
+  {
+    "id": 6,
+    "category": "single-hop",
+    "question": "What primary products does the company manufacture?",
+    "expected_answer_keywords": ["iPhone", "Mac", "iPad", "Services"],
+    "target_route": "vector"
+  },
+  {
+    "id": 7,
+    "category": "single-hop",
+    "question": "What is the primary regulatory body overseeing SEC filings?",
+    "expected_answer_keywords": ["SEC", "Securities", "Exchange Commission"],
+    "target_route": "graph"
+  },
+  {
+    "id": 8,
+    "category": "single-hop",
+    "question": "What was the operating margin percentage reported?",
+    "expected_answer_keywords": ["margin", "percent", "%"],
+    "target_route": "vector"
+  },
+  {
+    "id": 9,
+    "category": "single-hop",
+    "question": "Is Beats Electronics a subsidiary of Apple?",
+    "expected_answer_keywords": ["Beats", "subsidiary", "Apple"],
+    "target_route": "graph"
+  },
+  {
+    "id": 10,
+    "category": "single-hop",
+    "question": "What are the primary commercial risks listed under Item 1A?",
+    "expected_answer_keywords": ["risk", "market", "competition", "supply"],
+    "target_route": "vector"
+  },
+  {
+    "id": 11,
+    "category": "two-hop",
+    "question": "Who leads the company that acquired Beats Electronics?",
+    "expected_answer_keywords": ["Tim Cook", "Apple"],
+    "target_route": "graph"
+  },
+  {
+    "id": 12,
+    "category": "two-hop",
+    "question": "Which supplier based in Taiwan manufactures chips for Apple's iPhone?",
+    "expected_answer_keywords": ["TSMC", "Taiwan", "semiconductor"],
+    "target_route": "graph"
+  },
+  {
+    "id": 13,
+    "category": "two-hop",
+    "question": "Which subsidiaries of Apple have operations headquartered outside California?",
+    "expected_answer_keywords": ["subsidiary", "location", "operations"],
+    "target_route": "graph"
+  },
+  {
+    "id": 14,
+    "category": "two-hop",
+    "question": "What company supplies displays to Apple and also competes with its smartphone division?",
+    "expected_answer_keywords": ["Samsung", "display", "competitor"],
+    "target_route": "both"
+  },
+  {
+    "id": 15,
+    "category": "two-hop",
+    "question": "Which executive reports directly to Tim Cook and oversees global financial reporting?",
+    "expected_answer_keywords": ["Luca Maestri", "CFO", "reporting"],
+    "target_route": "graph"
+  },
+  {
+    "id": 16,
+    "category": "two-hop",
+    "question": "What products manufactured by Foxconn contribute to Apple's reported hardware revenue?",
+    "expected_answer_keywords": ["iPhone", "Foxconn", "hardware", "assembly"],
+    "target_route": "both"
+  },
+  {
+    "id": 17,
+    "category": "two-hop",
+    "question": "Which subsidiary manages European retail distribution for the parent entity?",
+    "expected_answer_keywords": ["Apple Operations Europe", "Ireland", "subsidiary"],
+    "target_route": "graph"
+  },
+  {
+    "id": 18,
+    "category": "two-hop",
+    "question": "What regulations enforce audit compliance on the committee chaired by the board?",
+    "expected_answer_keywords": ["Sarbanes-Oxley", "SOX", "Audit Committee"],
+    "target_route": "both"
+  },
+  {
+    "id": 19,
+    "category": "three-hop",
+    "question": "Which raw material suppliers provide minerals to Foxconn facilities that assemble products for Apple?",
+    "expected_answer_keywords": ["supplier", "Foxconn", "Apple", "materials"],
+    "target_route": "graph"
+  },
+  {
+    "id": 20,
+    "category": "three-hop",
+    "question": "Can you trace the supply and corporate connection between Samsung Electronics and Beats by Dre?",
+    "expected_answer_keywords": ["Samsung", "Apple", "Beats", "subsidiary", "supplies"],
+    "target_route": "graph"
+  },
+  {
+    "id": 21,
+    "category": "three-hop",
+    "question": "Which executive at a key hardware supplier previously held a governance role at an Apple joint venture?",
+    "expected_answer_keywords": ["governance", "supplier", "board", "executive"],
+    "target_route": "graph"
+  },
+  {
+    "id": 22,
+    "category": "three-hop",
+    "question": "How do regulatory penalties imposed on European subsidiaries impact the consolidated parent financials?",
+    "expected_answer_keywords": ["subsidiary", "penalties", "consolidated", "tax", "Europe"],
+    "target_route": "both"
+  },
+  {
+    "id": 23,
+    "category": "aggregation",
+    "question": "How many direct corporate subsidiaries and partner companies are identified?",
+    "expected_answer_keywords": ["subsidiaries", "partners", "total", "count"],
+    "target_route": "graph"
+  },
+  {
+    "id": 24,
+    "category": "aggregation",
+    "question": "What is the breakdown of reported financial metrics across all business segments?",
+    "expected_answer_keywords": ["revenue", "products", "services", "margin"],
+    "target_route": "both"
+  },
+  {
+    "id": 25,
+    "category": "aggregation",
+    "question": "List all executive officers and their corresponding corporate responsibilities.",
+    "expected_answer_keywords": ["CEO", "CFO", "COO", "Counsel", "Leadership"],
+    "target_route": "both"
+  },
+  {
+    "id": 26,
+    "category": "out-of-scope",
+    "question": "What is the current weather forecast in Paris today?",
+    "expected_answer_keywords": ["could not find", "not found", "document"],
+    "target_route": "vector"
+  },
+  {
+    "id": 27,
+    "category": "out-of-scope",
+    "question": "Who won the FIFA World Cup in 2022?",
+    "expected_answer_keywords": ["could not find", "not found", "document"],
+    "target_route": "vector"
+  }
+]

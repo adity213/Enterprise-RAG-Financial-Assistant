@@ -5,15 +5,19 @@ router = APIRouter()
 
 
 @router.post("/upload", summary="Upload a PDF document for ingestion")
-async def upload_document(file: UploadFile = File(...)):
+def upload_document(file: UploadFile = File(...)):
     """
     Upload a PDF file to be parsed, chunked, embedded, and stored
     in the vector database for future querying.
     """
-    if not file.filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+    allowed_extensions = (".pdf", ".docx", ".doc", ".txt")
+    if not any(file.filename.lower().endswith(ext) for ext in allowed_extensions):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unsupported file format. Supported formats: {', '.join(allowed_extensions)}"
+        )
 
-    file_bytes = await file.read()
+    file_bytes = file.file.read()
 
     if len(file_bytes) == 0:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
