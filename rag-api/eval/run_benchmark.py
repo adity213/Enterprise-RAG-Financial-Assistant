@@ -16,11 +16,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from app.services.query_service import answer_question
 
 
-def evaluate_response(response: dict, expected_keywords: list[str]) -> bool:
+def evaluate_response(response: dict, expected_keywords: list[str]) -> str:
     """Check if answer contains relevant information or correctly refuses out-of-scope queries."""
     ans = response.get("answer", "").lower()
+    
+    if "error occurred while generating" in ans or "error code: 429" in ans or "rate limit" in ans:
+        return "ERROR"
     if not ans:
-        return False
+        return "ERROR"
     
     # If out-of-scope query, check if it gracefully and factually refuses
     if any("could not find" in kw.lower() or "not found" in kw.lower() for kw in expected_keywords):
@@ -29,12 +32,14 @@ def evaluate_response(response: dict, expected_keywords: list[str]) -> bool:
             "no relevant", "not contain", "does not mention", "unrelated", 
             "outside the scope", "no information", "not provided"
         ]
-        return any(phrase in ans for phrase in refusal_phrases)
+        if any(phrase in ans for phrase in refusal_phrases):
+            return "PASS"
+        return "FAIL"
     
     # For financial queries, check keyword hit rate
     hits = sum(1 for kw in expected_keywords if kw.lower() in ans)
     threshold = max(1, len(expected_keywords) // 2)
-    return hits >= threshold
+    return "PASS" if hits >= threshold else "FAIL"
 
 
 def run_benchmark(questions_file: str = "eval/benchmark_questions.json"):
@@ -54,7 +59,7 @@ def run_benchmark(questions_file: str = "eval/benchmark_questions.json"):
     print(f"[BENCHMARK] Running Financial RAG Benchmark ({len(questions)} queries)")
     print(f"=======================================================\n")
 
-    results_by_cat = defaultdict(lambda: {"vector_correct": 0, "hybrid_correct": 0, "total": 0})
+    results_by_cat = defaultdict(lambda: {"vector_correct": 0, "hybrid_correct": 0, "total": 0, "total_scorable": 0, "errors": 0})
     detailed_results = []
     vector_latencies = []
     hybrid_latencies = []
@@ -80,14 +85,24 @@ def run_benchmark(questions_file: str = "eval/benchmark_questions.json"):
         hyb_passed = evaluate_response(hyb_res, expected_keywords)
 
         results_by_cat[cat]["total"] += 1
-        if vec_passed:
-            results_by_cat[cat]["vector_correct"] += 1
-        if hyb_passed:
-            results_by_cat[cat]["hybrid_correct"] += 1
+        
+        if vec_passed == "ERROR" or hyb_passed == "ERROR":
+            results_by_cat[cat]["errors"] += 1
+            v_mark = "ERROR" if vec_passed == "ERROR" else "FAIL"
+            h_mark = "ERROR" if hyb_passed == "ERROR" else "FAIL"
+        else:
+            results_by_cat[cat]["total_scorable"] += 1
+            if vec_passed == "PASS":
+                results_by_cat[cat]["vector_correct"] += 1
+            if hyb_passed == "PASS":
+                results_by_cat[cat]["hybrid_correct"] += 1
+            v_mark = vec_passed
+            h_mark = hyb_passed
 
-        v_mark = "PASS" if vec_passed else "FAIL"
-        h_mark = "PASS" if hyb_passed else "FAIL"
         print(f"[{cat.upper():<12}] Q{qid:<2}: {question_text[:45]:<45} | Vec: [{v_mark}] ({vec_lat}ms) | Hyb ({hyb_res.get('route')}): [{h_mark}] ({hyb_lat}ms)", flush=True)
+
+        # Sleep to be polite to the API
+        time.sleep(1)
 
         detailed_results.append({
             "id": qid,
@@ -116,17 +131,21 @@ def run_benchmark(questions_file: str = "eval/benchmark_questions.json"):
     total_vec_correct = sum(d["vector_correct"] for d in results_by_cat.values())
     total_hyb_correct = sum(d["hybrid_correct"] for d in results_by_cat.values())
     total_queries = len(questions)
+    total_scorable = sum(d["total_scorable"] for d in results_by_cat.values())
+    total_errors = sum(d["errors"] for d in results_by_cat.values())
 
     for cat in category_order:
         if cat in results_by_cat:
             d = results_by_cat[cat]
             summary[cat] = {
                 "total": d["total"],
+                "total_scorable": d["total_scorable"],
+                "errors": d["errors"],
                 "vector_correct": d["vector_correct"],
-                "vector_accuracy": round((d["vector_correct"] / d["total"]) * 100, 2) if d["total"] else 0.0,
+                "vector_accuracy": round((d["vector_correct"] / d["total_scorable"]) * 100, 2) if d["total_scorable"] else 0.0,
                 "hybrid_correct": d["hybrid_correct"],
-                "hybrid_accuracy": round((d["hybrid_correct"] / d["total"]) * 100, 2) if d["total"] else 0.0,
-                "delta": round(((d["hybrid_correct"] - d["vector_correct"]) / d["total"]) * 100, 2) if d["total"] else 0.0
+                "hybrid_accuracy": round((d["hybrid_correct"] / d["total_scorable"]) * 100, 2) if d["total_scorable"] else 0.0,
+                "delta": round(((d["hybrid_correct"] - d["vector_correct"]) / d["total_scorable"]) * 100, 2) if d["total_scorable"] else 0.0
             }
 
     latency_stats = {
@@ -171,8 +190,8 @@ def run_benchmark(questions_file: str = "eval/benchmark_questions.json"):
     for cat in category_order:
         if cat in summary:
             s = summary[cat]
-            vec_str = f"{s['vector_correct']}/{s['total']} ({s['vector_accuracy']}%)"
-            hyb_str = f"{s['hybrid_correct']}/{s['total']} ({s['hybrid_accuracy']}%)"
+            vec_str = f"{s['vector_correct']}/{s['total_scorable']} ({s['vector_accuracy']}%)"
+            hyb_str = f"{s['hybrid_correct']}/{s['total_scorable']} ({s['hybrid_accuracy']}%)"
             delta_str = f"+{s['delta']}%" if s['delta'] >= 0 else f"{s['delta']}%"
             print(f"{cat.capitalize():<16} | {vec_str:<24} | {hyb_str:<24} | {delta_str:<8}")
 
@@ -192,10 +211,12 @@ def run_benchmark(questions_file: str = "eval/benchmark_questions.json"):
     tot_delta_str = f"+{tot_delta}%" if tot_delta >= 0 else f"{tot_delta}%"
 
     print("-" * 78)
-    print(f"{'Overall Acc.':<16} | {total_vec_correct}/{total_queries} ({tot_vec_pct}%) | {total_hyb_correct}/{total_queries} ({tot_hyb_pct}%) | {tot_delta_str:<8}")
+    print(f"{'Overall Acc.':<16} | {total_vec_correct}/{total_scorable} ({tot_vec_pct}%) | {total_hyb_correct}/{total_scorable} ({tot_hyb_pct}%) | {tot_delta_str:<8}")
     print(f"{'Latency (p50)':<16} | {p50_v:>18.1f} ms | {p50_h:>18.1f} ms | {p50_diff_str:<8}")
     print(f"{'Latency (p95)':<16} | {p95_v:>18.1f} ms | {p95_h:>18.1f} ms | {p95_diff_str:<8}")
     print("=" * 78)
+    if total_errors > 0:
+        print(f"\n[WARNING] {total_errors}/{total_queries} questions could not be scored due to rate limiting or infrastructure errors during this run.")
     print(f"\n[OUTPUT] Raw benchmark results written to:\n  {raw_results_file}\n")
 
 

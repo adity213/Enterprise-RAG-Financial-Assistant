@@ -27,15 +27,27 @@ This system combines:
 
 ## 📊 Evaluation: Vector Search vs. Hybrid GraphRAG
 
-Empirical comparison across test query types on financial filings (SEC 10-Ks, Tesla Q4 Updates, Microsoft Reports):
+## Benchmark Results (Pending API Quotas)
 
-| Query Type                                                                                 |    Vector-Only Baseline    |           Hybrid GraphRAG           | Engineering Note                                                    |
-| :----------------------------------------------------------------------------------------- | :-------------------------: | :---------------------------------: | :------------------------------------------------------------------ |
-| **Single-Hop Metric** (e.g., Revenue, Cash Balance)                                  |    **High** (~85%)    |        **High** (~88%)        | Dense vector search retrieves tabular snippets directly.            |
-| **2-Hop Relationship** (e.g., Subsidiary $\rightarrow$ Parent $\rightarrow$ CEO) |    **Low** (~40%)    |        **High** (~80%)        | Graph traversal bridges nodes across different sections.            |
-| **Multi-Tier Supply Chain** (e.g., Supplier dependencies)                            |    **Poor** (~20%)    |       **Strong** (~70%)       | Requires multi-hop graph walking (`Foxconn -> Apple`).            |
-| **Entity Co-occurrence / Cross-Filing Trends**                                       |  **Moderate** (~45%)  |        **High** (~75%)        | Shared nodes connect disparate filings (e.g. Microsoft & Apple).    |
-| **Retrieval Latency**                                                                | **Fast** (~15–30 ms) | **Sub-second** (~180–450 ms) | Graph lookup adds ~5ms; LLM synthesis accounts for bulk of latency. |
+We have built a robust 50-question benchmark suite (`eval/run_benchmark.py`) to systematically test the performance of the Vector-Only Baseline against our Hybrid GraphRAG Engine. 
+
+The suite now correctly isolates infrastructure failures (like rate limits) from actual wrong answers, ensuring accuracy is only calculated on successfully processed queries. It also features automatic provider failover (Groq -> Gemini).
+
+**Current Status:**
+As of the latest run, we were unable to complete the full 50-question evaluation because the provided API keys have exhausted their free-tier limits:
+*   **Groq:** Exhausted the 200,000 Tokens Per Day (TPD) limit.
+*   **Gemini:** Exhausted the 20 Requests Per Day free tier limit.
+
+Because of these hard limits on the free tiers, the benchmark script currently processes the majority of queries as `[ERROR]` rather than `[FAIL]`. In the latest partial run before quotas were exhausted, 9 questions were scored:
+*   **Vector-Only Baseline:** 1/9 (11.11%)
+*   **Hybrid GraphRAG:** 3/9 (33.33%)
+
+**Next Steps:**
+To publish verifiable ground-truth metrics, this benchmark must be re-run with either:
+1.  An upgraded Groq or Gemini API key with higher rate limits.
+2.  A local OSS LLM (e.g., Llama 3) to bypass external API constraints.
+
+Once a full run completes successfully, the raw JSON results will be published in `eval/results/` and the definitive accuracy metrics will be updated here.
 
 ---
 

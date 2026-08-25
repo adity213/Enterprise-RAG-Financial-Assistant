@@ -147,8 +147,33 @@ ANSWER:"""
                 
             return clean_content if clean_content else content
         except Exception as e:
-            logger.error(f"[LLMClient] API completion error: {e}")
-            return f"An error occurred while generating the answer via LLM: {str(e)}"
+            if "429" in str(e) or "rate_limit" in str(e).lower():
+                logger.warning(f"[LLMClient] Rate limit hit. Falling back to Gemini. Original error: {e}")
+                try:
+                    gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
+                    if not gemini_api_key:
+                        raise ValueError("GEMINI_API_KEY environment variable is not set for fallback.")
+
+                    gemini_client = OpenAI(
+                        api_key=gemini_api_key,
+                        base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+                    )
+                    response = gemini_client.chat.completions.create(
+                        model="gemini-3.6-flash",
+                        messages=[
+                            {"role": "system", "content": "You are a concise financial analyst. Return direct structured markdown answers without <think> tags."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=0.1,
+                        max_tokens=2500,
+                    )
+                    return response.choices[0].message.content.strip()
+                except Exception as gemini_e:
+                    logger.error(f"[LLMClient] Gemini fallback also failed: {gemini_e}")
+                    return f"An error occurred while generating the answer via LLM: {str(e)} | Fallback error: {str(gemini_e)}"
+            else:
+                logger.error(f"[LLMClient] API completion error: {e}")
+                return f"An error occurred while generating the answer via LLM: {str(e)}"
 
 
 # Singleton instance
