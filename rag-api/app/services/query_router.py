@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import time
 from typing import Any, Dict, Optional
 from openai import OpenAI
@@ -100,12 +101,13 @@ class QueryRouter:
                 model=self._get_model(),
                 messages=[
                     {"role": "system", "content": ROUTER_SYSTEM_PROMPT},
-                    {"role": "user", "content": f"Classify this question:\n{clean_q}"},
+                    {"role": "user", "content": f"Classify this question into valid JSON format:\n{clean_q}"},
                 ],
                 temperature=0.0,
-                max_tokens=250,
+                max_tokens=500,
             )
             content = response.choices[0].message.content.strip()
+            # Clean thinking tags or code fences if present
             content_clean = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
             match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", content_clean, flags=re.DOTALL)
             if match:
@@ -113,6 +115,7 @@ class QueryRouter:
             else:
                 brace_match = re.search(r"(\{.*\})", content_clean, flags=re.DOTALL)
                 json_str = brace_match.group(1) if brace_match else content_clean
+            
             parsed = json.loads(json_str)
             route = parsed.get("route", "both").lower()
             if route not in ["vector", "graph", "both"]:

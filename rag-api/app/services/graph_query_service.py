@@ -31,6 +31,11 @@ class GraphQueryService:
         resolved_entities = [
             entity_resolver.resolve_entity(ent) for ent in entities if ent.strip()
         ]
+        # Also discover any explicit graph node names in question text
+        matched_nodes = self._search_nodes_by_keywords(question)
+        for mn in matched_nodes:
+            resolved_entities.append(mn["name"])
+
         # Remove duplicates preserving order
         unique_entities = list(dict.fromkeys(resolved_entities))
 
@@ -127,12 +132,12 @@ class GraphQueryService:
         }
 
     def _search_nodes_by_keywords(self, question: str) -> List[Dict[str, Any]]:
-        """Find node names that appear as substrings in the question."""
+        """Find node names that appear as substrings in the question (case-insensitive)."""
         cypher = """
         MATCH (n)
-        WHERE $q CONTAINS toLower(n.name) OR toLower(n.name) CONTAINS $q
+        WHERE toLower($q) CONTAINS toLower(n.name)
         RETURN n.name AS name, labels(n)[0] AS type
-        LIMIT 5
+        LIMIT 10
         """
         return self.store.query_graph(cypher, {"q": question.lower()})
 
